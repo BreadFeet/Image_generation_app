@@ -101,10 +101,9 @@ export default function Chat() {
          </div>
 
          {/* Generate image button */}
-         {messages.length >= 2 && !isLoading && (
+         {!isLoading && messages.length >= 2 && (
            <button
              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disable:opacity-50"
-             disabled={isLoading}
              onClick={async () => {
                setImageIsLoading(true);
                const response = await fetch("api/images", {
@@ -125,8 +124,14 @@ export default function Chat() {
            </button>
          )}
 
+         { imageIsLoading && (
+           <div className="flex justify-end pr-4">
+             <span className="animate-bounce text-black">Loading image ⏩⏩⏩ </span>
+           </div>
+         )}
+
          {image && (
-           <div className="card w-full h-screen max-w-md py-10 mx-auto stretch">
+           <div className="card w-full h-screen max-w-md py-5 mx-auto stretch">
              <img src={`data: image/jpeg; base64, ${image}`}/>
            </div>
          )}
