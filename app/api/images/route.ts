@@ -7,17 +7,19 @@ const openai = new OpenAI({
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
-  const { message } = await req.json();
+  const { size, number, message } = await req.json();
   const prompt = `${message}`;
 
   const response = await openai.images.generate({
     model: "dall-e-2",
     prompt: prompt.substring(0, Math.min(prompt.length, 1000)),
-    size: "1024x1024",
+    size: size,
 //     quality: "standard",
     response_format: "b64_json",
-    n: 1,
+    n: number,
   });
 
-  return new Response(JSON.stringify(response.data[0].b64_json))
+  const images = response.data.map((image) => image.b64_json);
+
+  return new Response(JSON.stringify(images))
 }

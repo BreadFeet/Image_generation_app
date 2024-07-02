@@ -3,13 +3,18 @@
 import { useChat } from "ai/react";
 import { useState, useEffect } from "react";
 
-
 export default function Chat() {
   const { messages, append, isLoading } = useChat();
 
   const [ imageIsLoading, setImageIsLoading ] = useState(false);
   const [ image, setImage ] = useState<string | null>(null);
 
+  const [ state, setState ] = useState({
+    theme: "",
+  });
+
+  const [ size, setSize ] = useState<string | null>(null);
+  const [ number, setNumber ] = useState(0);
 
   const themes = [
     { emoji: "💻", value: "Work" },
@@ -19,11 +24,13 @@ export default function Chat() {
     { emoji: "⚽️", value: "Sports" },
   ];
 
-  const [ state, setState ] = useState({
-    theme: "",
-  });
+  const sizes = [
+    { value: "256x256" },
+    { value: "512x512" },
+    { value: "1024x1024" },
+  ];
 
-  const handleChange = ({
+  const handleThemeChange = ({
     target: { name, value },
   }: React.ChangeEvent<HTMLInputElement>) => {
     setState({
@@ -32,11 +39,27 @@ export default function Chat() {
     });
   };
 
+  const handleSizeChange = ({
+    target: { value },
+  }: React.ChangeEvent<HTMLInputElement>) => {
+    setSize(value);
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const num = event.target.value;
+    setNumber(Number(num));
+  };
+
   useEffect(() => {
     if (isLoading) {
       setImage(null);
     }
   }, [messages]);
+
+  if (size &&  number & isLoading) {
+    setSize(null);
+    setNumber(0);
+  };
 
   return(
     <main className="mx-auto w-full p-24 flex flex-col">
@@ -63,7 +86,7 @@ export default function Chat() {
                    type="radio"
                    value={value}
                    name="theme"
-                   onChange={handleChange}
+                   onChange={handleThemeChange}
                  />
                  <label className="ml-2" htmlFor={value}>
                    {`${emoji} ${value}`}
@@ -100,29 +123,70 @@ export default function Chat() {
            {messages[messages.length - 1]?.content}
          </div>
 
-         {/* Generate image button */}
+         {/* Image Options */}
          {!isLoading && messages.length >= 2 && (
-           <button
-             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disable:opacity-50"
-             onClick={async () => {
-               setImageIsLoading(true);
-               const response = await fetch("api/images", {
-                 method: "POST",
-                 headers: {
-                   "Content-Type": "application/json",
-                 },
-                 body: JSON.stringify({
-                   message: messages[messages.length - 1].content,
-                 }),
-               });
-               const data = await response.json();
-               setImage(data);
-               setImageIsLoading(false);
-             }}
-           >
-             Generate an image
-           </button>
+           <div className="space-y-4 bg-opacity-25 bg-gray-700 rounded-lg p-4">
+             <h3 className="text-x1 font-semibold"> Image Options </h3>
+             <p> Size </p>
+             <div className="flex flex-wrap justify-center">
+               {sizes.map(({value}) => (
+                 <div
+                   key={value}
+                   className="p-4 m-2 bg-opacity-25 bg-gray-600 rounded-lg"
+                 >
+                   <input
+                     id={value}
+                     type="radio"
+                     name="size"
+                     value={value}
+                     onChange={handleSizeChange}
+                   />
+                   <label className="ml-2" htmlFor={value}>
+                     {`${value}`}
+                   </label>
+                 </div>
+               ))}
+             </div>
+             <div className="slidecontainer">
+               <p>Number: <span id="demo">{`${number}`}</span></p>
+               <input
+                 className="slider"
+                 type="range"
+                 id="myRange"
+                 min="0"
+                 max="10"
+                 value={number}
+                 onInput={handleNumberChange}
+               />
+             </div>
+           </div>
          )}
+
+         {/* Generate image button */}
+         <button
+           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disable:opacity-50"
+           hidden={!size || number == 0}
+           onClick={async () => {
+             setImageIsLoading(true);
+             const response = await fetch("api/images", {
+               method: "POST",
+               headers: {
+                 "Content-Type": "application/json",
+               },
+               body: JSON.stringify({
+                 size: size,
+                 number: number,
+                 message: messages[messages.length - 1].content,
+               }),
+             });
+             const data = await response.json();
+             setImage(data);
+             setImageIsLoading(false);
+           }}
+         >
+           Generate an image
+         </button>
+         ;
 
          { imageIsLoading && (
            <div className="flex justify-end pr-4">
@@ -131,8 +195,16 @@ export default function Chat() {
          )}
 
          {image && (
-           <div className="card w-full h-screen max-w-md py-5 mx-auto stretch">
-             <img src={`data: image/jpeg; base64, ${image}`}/>
+           <div className="card w-full h-screen max-w-md py-0 mx-auto stretch">
+             {image.map((img, idx) => (
+               <div className="image-center">
+                 <img
+                   className="p-4"
+                   key={idx}
+                   src={`data: image/jpeg; base64, ${img}`}
+                 />
+               </div>
+             ))}
            </div>
          )}
 
