@@ -56,7 +56,7 @@ export default function Chat() {
     }
   }, [messages]);
 
-  if (size &&  number & isLoading) {
+  if (size &&  number && isLoading) {
     setSize(null);
     setNumber(0);
   };
